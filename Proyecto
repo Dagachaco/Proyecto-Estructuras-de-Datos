@@ -1,4 +1,7 @@
-/* Verificar si en playlist y generos se actualizan en insercion y eliminación correctamente el número de canciones por cada una*/
+/* Verificar si en playlist y generos se actualizan en insercion y eliminación correctamente el número de canciones por cada una,
+Falta eliminar artista
+Modificar y eliminar: Album, genero musical, sello discografico y playlist
+El menu interactivo */
 
 #include <iostream>
 #include <cctype> //Biblioteca para validar entradas de string;
@@ -218,7 +221,7 @@ int validarEntero() {
     }
 }
 
-
+//Funciones principales de las listas
 Canciones *buscarCancion(int id){
     if(headCanciones==nullptr){
         return nullptr;
@@ -237,8 +240,6 @@ Canciones *buscarCancion(int id){
 
     return nullptr;
 }
-
-
 
 Artistas *buscarArtista(int id){
     if(headArtistas == nullptr){
@@ -272,7 +273,6 @@ bool validarNombreArtista(string nombre, int id){
 
     return false;
 }
-
 
 Albumes *buscarAlbum(int id){
     if(headAlbumes == nullptr){
@@ -381,7 +381,6 @@ void insertarArtistas(int id, string nombreArtista, string nombreReal, string pa
     Artistas *temp = headArtistas;
     Artistas *ante = nullptr;
 
-    // Buscar posición correcta
     while (temp != nullptr && nombreArtista > temp->nombreArtista) {
         ante = temp;
         temp = temp->sig;
@@ -404,7 +403,6 @@ void insertarArtistas(int id, string nombreArtista, string nombreReal, string pa
 
     cout << "Artista insertado con éxito." << endl;
 }
-
 
 void insertarAlbum(int id, string titulo, int ano){
     Albumes *nuevo = new Albumes(id, titulo, ano);
@@ -521,9 +519,6 @@ void insertarCancionEnAlbum(int idAlbum, int idCan) {
     album->numCanciones++;
     cout << "Canción agregada al álbum correctamente." << endl;
 }
-
-
-
 
 void insertarCancionEnArtista(int idArtista, int idCancion) {
     Artistas* artista = buscarArtista(idArtista);
@@ -726,7 +721,6 @@ void eliminarCancionArtista(int idCancion, int idArtista) {
     cout << "Cancion no encontrada en la sublista del artista." << endl;
 }
 
-
 void eliminarCancionAlbum(int id, int albu){
     Albumes* tem = buscarAlbum(albu); 
     if (tem == nullptr) {
@@ -776,6 +770,7 @@ void eliminarCancionPlaylist(int id, int play){
             }
 
             delete actual;
+            tem->canciones--;
             cout << "Cancion eliminada de la playlist con éxito." << endl;
             return;
         }
@@ -786,7 +781,6 @@ void eliminarCancionPlaylist(int id, int play){
 
     cout << "Canción no encontrada en la playlist." << endl;
 }
-
 
 void buscarPlaylistsCancion(int id) {
     Playlists* buscar = headPlaylists;
@@ -830,8 +824,8 @@ void eliminarCancionGenero(int id, int gen){
                 anterior->sig = actual->sig;
             }
 
-            tem->canciones --;
             delete actual;
+            tem->canciones--;
             cout << "Cancion eliminada del género musical con éxito." << endl;
             return;
         }
@@ -842,7 +836,6 @@ void eliminarCancionGenero(int id, int gen){
 
     cout << "Canción no encontrada en el género musical" << endl;
 }
-
 
 void buscarCancionEnGeneros(int id) {
     Generos *buscar = headGeneros;
@@ -909,7 +902,158 @@ void eliminarCancion(int id) {
     cout << "Canción eliminada con éxito" << endl;
 }
 
+void ordenarNombre(int id){
+    if (headArtistas == nullptr || headArtistas->sig == nullptr) {
+        return;
+    }
 
+    // Buscar el nodo a modificar
+    Artistas *ant = nullptr;
+    Artistas *act = headArtistas;
+
+    while (act != nullptr && act->ID != id) {
+        ant = act;
+        act = act->sig;
+    }
+
+    if (act == nullptr) {
+        cout << "Artista no encontrado." << endl;
+        return;
+    }
+
+    if ((act->ant == nullptr && act->sig == nullptr)) {
+        return;
+    }
+
+    if (act->ant != nullptr) {
+        act->ant->sig = act->sig;
+    } else {
+        headArtistas = act->sig;
+    }
+
+    if (act->sig != nullptr) {
+        act->sig->ant = act->ant;
+    }
+
+    
+    act->sig = nullptr;
+    act->ant = nullptr;
+
+    Artistas *temp = headArtistas;
+    Artistas *prev = nullptr;
+
+    while (temp != nullptr && act->nombre > temp->nombreArtista) {
+        prev = temp;
+        temp = temp->sig;
+    }
+
+    if (prev == nullptr) {
+        act->sig = headArtistas;
+        if (headArtistas != nullptr) {
+            headArtistas->ant = act;
+        }
+        headArtistas = act;
+    } 
+    else {
+        act->sig = prev->sig;
+        if (prev->sig != nullptr) {
+            prev->sig->ant = act;
+        }
+        prev->sig = act;
+        act->ant = prev;
+    }
+}
+
+void modificarArtistaNombre(int id, string nombreNuevo){
+    Artistas *modificar = buscarArtista(id);
+
+    if(modificar==nullptr){
+        cout << "El artista no se encuentra ingresado." << endl;
+        return;
+    }
+
+    modificar->nombre = nombreNuevo;
+
+    if (modificar->sig != nullptr && nombreNuevo > modificar->sig->nombreArtista) {
+        ordenarNombre(id);
+    }
+    
+        
+    cout << "Nombre del artista modificado con éxito." << endl;
+}
+
+void borrarSelloArtista(int id, int idArtista) {
+    Sellos *temp = buscarSello(id);
+    if (temp == nullptr) {
+        cout << "El sello discográfico no se encuentra en el sistema." << endl;
+        return;
+    }
+
+    subLArtistas *busca = temp->subLArtistas;
+    subLArtistas *ant = nullptr;
+
+    while (busca != nullptr && busca->enlace->ID != idArtista) {
+        ant = busca;
+        busca = busca->sig;
+    }
+
+    if (busca == nullptr) {
+        cout << "El artista no se encuentra asociado a este sello." << endl;
+        return;
+    }
+
+    if (ant != nullptr) {
+        ant->sig = busca->sig;
+    } else {
+        temp->subLArtistas = busca->sig;
+    }
+
+    delete busca;
+    cout << "El artista fue eliminado del sello correctamente." << endl;
+}
+
+void modificarArtistaSello(int id, string nuevoSello, int idSello){
+    Artistas *temp = buscarArtista(id);
+    Sellos *buscar = buscarSello(idSello);
+
+    if(temp==nullptr){
+        cout << "El artista aun no esta ingresado en el sistema." << endl;
+        return;
+    }
+    if(buscar == nullptr){
+        cout << "El sello discográfico aun no esta ingresado en el sistema." << endl;
+        temp -> sello = nuevoSello;
+        cout << "Sello módificado en el artista con exito." << endl;
+        return;
+    }
+
+    borrarSelloArtista(buscar);
+
+    temp->sello = nuevoSello;
+    
+    cout << "Sello discográfico del artista modificado con éxito." << endl;
+
+}
+
+void modificarArtistaCanciones(int idArti, int idCan){
+
+}
+
+void modificarArtistaAlbum(int idArti, int idAlbu){
+
+}
+
+void modificarAlbumNombre(int idAlbu, string nuevoNombre){
+
+}
+
+void modificarNumeroCanciones(int idAlbu, int idCanci){
+
+}
+
+
+
+//Funciones para la carga de datos
 void cargarDatos(){
     insertarArtistas(23, "Beret", "Francisco Javier Álvarez Beret", "España", "Warner Music");
     insertarArtistas(1, "Romeo Santos", "Anthony Santos", "Estados Unidos", "Sony Music Latin");
@@ -1083,17 +1227,35 @@ void cargarDatos(){
 /*Funciones de consultas del sistema*/
 
 void GeneroMasCanciones(){
-    int i = -1;
+    int maxi = -1;
     if(headGeneros==nullptr){
         cout << "No existen géneros musicales." << endl;
         return;
     }
 
+    Generos *temp = headGeneros;
 
+    do{
 
-    
-    else{
-    }
+        if(temp->canciones > maxi){
+            maxi = temp->canciones;
+        }
+    } while (temp!=headGeneros);
+
+    int i = 1;
+
+    cout << "Géneros con más canciones públicados: " << endl;
+    do{
+        if(temp->canciones==maxi){
+            cout << i << "- " << temp->nombre << endl;
+            i++;
+        }
+
+        temp = temp -> sig;
+
+    } while(temp!=headGeneros);
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl; 
 }
 
 void ArtistaMasAlbum(){
@@ -1562,6 +1724,6 @@ void imprimirSellosArtista(){
 
 int main(){
     cargarDatos();
-    ArtistaMasAlbum();
+    GeneroMasCanciones();
     return 0;
 }
