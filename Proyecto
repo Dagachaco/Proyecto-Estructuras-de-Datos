@@ -1,0 +1,1567 @@
+/* Verificar si en playlist y generos se actualizan en insercion y eliminación correctamente el número de canciones por cada una*/
+
+#include <iostream>
+#include <cctype> //Biblioteca para validar entradas de string;
+#include <limits> // Biblioteca para validar entradas de int;
+
+using namespace std;
+int duracion;
+
+/*Lista simple que maneja las canciones.*/
+struct Canciones {
+    int ID;
+    string titulo;
+    int minutos;
+    int segundos;
+    int ano;
+    int IDalbum;
+    int IDartista;
+
+    Canciones *sig;
+
+    Canciones(int I,string t,int minu, int an, int seg,int Ial,int Iar) {
+        ID = I;
+        titulo = t;
+        minutos = minu;
+        segundos = seg;
+        ano = an;
+        IDalbum = Ial;
+        IDartista = Iar;
+
+        sig=nullptr;
+
+    }
+}*headCanciones;
+
+/*Lista simple que maneja los álbumes.*/
+struct Albumes {
+    int ID;
+    string titulo;
+    int ano;
+    int numCanciones;
+
+    Albumes *sig;
+
+    struct subLcanciones *subLcanciones;
+
+    Albumes(int I,string t,int a) {
+        ID = I;
+        titulo = t;
+        ano = a;
+        numCanciones = 0;
+
+        sig=nullptr;
+        subLcanciones = nullptr;
+
+    }
+}*headAlbumes;
+
+/*Lista doblemente enlazada que maneja los artistas.*/
+struct Artistas {
+    int ID;
+    string nombreArtista;
+    string nombre;
+    string pais;
+    string sello;
+    int album;
+
+    Artistas *ant;
+    Artistas *sig;
+
+    struct subLAlbumes *subLAlbumes;
+    struct subLcanciones *subLcanciones;
+
+    Artistas(int I,string nA,string n,string p,string s) {
+        ID = I;
+        nombreArtista = nA;
+        nombre = n;
+        pais = p;
+        sello = s;
+        album = 0;
+
+        ant = nullptr;
+        sig= nullptr;
+        subLAlbumes = nullptr;
+        subLcanciones = nullptr;
+
+    }
+}*headArtistas;
+
+/*Lista circular que maneja los generos.*/
+struct Generos {
+    int ID;
+    string nombre;
+    string descripcion;
+    int canciones;
+
+    Generos *sig;
+
+    struct subLcanciones *subLcanciones;
+
+    Generos(int I,string n,string d) {
+        ID = I;
+        nombre = n;
+        descripcion = d;
+        sig = nullptr;
+        canciones = 0;
+        subLcanciones = nullptr;
+    }
+}*headGeneros;
+
+/*Lista simple que maneja las Playlists.*/
+struct Playlists {
+    int ID;
+    string nombre;
+    string creador;
+    string fecha;
+    int canciones;
+
+    Playlists *sig;
+
+    struct subLcanciones *subLcanciones;
+
+    Playlists(int I,string n,string c,string f) {
+        ID = I;
+        nombre = n;
+        creador = c;
+        fecha = f;
+        canciones = 0;
+
+        sig=nullptr;
+        subLcanciones = nullptr;
+    }
+}*headPlaylists;
+
+/*Lista doblemente enlazada circular que maneja los sellos discográficos.*/
+struct Sellos {
+    int ID;
+    string nombre;
+    string pais;
+    string ano;
+    int artistas;
+
+    Sellos *ant;
+    Sellos *sig;
+
+    struct subLArtistas *subLArtistas;
+
+    Sellos(int I,string n,string p,string a) {
+        ID = I;
+        nombre = n;
+        pais = p;
+        ano = a;
+        artistas = 0;
+
+        ant=nullptr;
+        sig=nullptr;
+        subLArtistas = nullptr;
+    }
+}*headSellos;
+
+struct subLcanciones{
+    
+    Canciones *enlace;
+    subLcanciones *sig;
+
+    subLcanciones(Canciones *can){
+        enlace = can;
+        sig = nullptr;
+    }
+};
+
+struct subLAlbumes{
+
+    Albumes *enlace;
+    subLAlbumes *sig;
+
+    subLAlbumes(Albumes *alb){
+        enlace = alb;
+        sig = nullptr;
+    }
+};
+
+struct subLArtistas{
+
+    Artistas *enlace;
+    subLArtistas *sig;
+
+    subLArtistas(Artistas *art){
+        enlace = art;
+        sig = nullptr;
+    }
+};
+
+//Función que valida que la entrada sea valida.
+bool validar(string nom){
+    for (char c : nom){
+        if (!isalpha(c) && !isspace(c)) { 
+            return false;
+        }
+    }
+    return true;
+}
+
+//Función que valida que la entrada sea un entero.
+int validarEntero() {
+    int n;
+    while (true) {
+        cin >> n;
+
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Entrada inválida. Solo se permiten números enteros." << endl;
+        } else {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return n;
+        }
+    }
+}
+
+
+Canciones *buscarCancion(int id){
+    if(headCanciones==nullptr){
+        return nullptr;
+    }
+
+    Canciones *temp = headCanciones;
+
+    while(temp!=nullptr){
+        
+        if(temp->ID == id){
+            return temp;
+        }
+
+        temp = temp->sig;
+    }
+
+    return nullptr;
+}
+
+
+
+Artistas *buscarArtista(int id){
+    if(headArtistas == nullptr){
+        return nullptr;
+    }
+
+    Artistas *temp = headArtistas;
+
+    while(temp!=nullptr){
+
+        if(temp->ID == id){
+            return temp;
+        }
+
+        temp = temp->sig;
+    }
+
+    return nullptr;
+}
+
+bool validarNombreArtista(string nombre, int id){
+    Artistas *temp = buscarArtista(id);
+
+    if(temp == nullptr){
+        return false;
+    }
+    
+    else if(temp->nombre == nombre){
+        return true;
+    }
+
+    return false;
+}
+
+
+Albumes *buscarAlbum(int id){
+    if(headAlbumes == nullptr){
+        return nullptr;
+    }
+
+    Albumes *temp = headAlbumes;
+
+    while(temp!=nullptr){
+
+        if(temp->ID == id){
+            return temp;
+        }
+
+        temp = temp->sig;
+    }
+
+    return nullptr;
+}
+
+Generos *buscarGenero(int id){
+    if(headGeneros==nullptr){
+        return nullptr;
+    }
+
+    Generos *temp = headGeneros;
+
+    do{
+
+        if(temp->ID == id){
+            return temp;
+        }
+
+        temp = temp->sig;
+    }while(temp!=headGeneros);
+
+    return nullptr;
+}
+
+Playlists *buscarPlaylist(int id){
+    if(headPlaylists == nullptr){
+        return nullptr;
+    }
+
+    Playlists *temp = headPlaylists;
+    while(temp!=nullptr){
+        
+        if(temp->ID==id){
+            return temp;
+        }
+
+        temp = temp->sig;
+    }
+
+    return nullptr;
+}
+
+Sellos *buscarSello(int id){
+    if(headSellos == nullptr){
+        return nullptr;
+    }
+
+    Sellos *temp = headSellos;
+
+    do{
+
+        if(temp->ID == id){
+            return temp;
+        }
+
+        temp = temp->sig;
+    }while(temp!=headSellos);
+
+    return nullptr;
+}
+
+void insertarCanciones(int idCancion, string titulo, int ano, int minu, int seg, int idAlbum, int idArtista){
+    Canciones *nueva = new Canciones(idCancion, titulo, minu, ano, seg, idAlbum, idArtista);
+
+    if (headCanciones == nullptr) {
+        headCanciones = nueva;
+        duracion = minu * 60 + seg;
+        cout << "Canción agregada con éxito." << endl << endl;
+        return;
+    }
+    
+    int duracionNueva = minu * 60 + seg;
+
+    if (duracionNueva > duracion) {
+        duracion  = duracionNueva;
+    }
+
+    nueva ->sig = headCanciones;
+    headCanciones = nueva;
+}
+
+void insertarArtistas(int id, string nombreArtista, string nombreReal, string pais, string sello) {
+    Artistas *nuevo = new Artistas(id, nombreArtista, nombreReal, pais, sello);
+
+    if (headArtistas == nullptr) {
+        headArtistas = nuevo;
+        cout << "Artista insertado con éxito." << endl;
+        return;
+    }
+
+    Artistas *temp = headArtistas;
+    Artistas *ante = nullptr;
+
+    // Buscar posición correcta
+    while (temp != nullptr && nombreArtista > temp->nombreArtista) {
+        ante = temp;
+        temp = temp->sig;
+    }
+
+    if (ante == nullptr) {
+        // Insertar al inicio
+        nuevo->sig = headArtistas;
+        headArtistas->ant = nuevo;
+        headArtistas = nuevo;
+    } else {
+        // Insertar en medio o final
+        nuevo->sig = temp;
+        nuevo->ant = ante;
+        ante->sig = nuevo;
+        if (temp != nullptr) {
+            temp->ant = nuevo;
+        }
+    }
+
+    cout << "Artista insertado con éxito." << endl;
+}
+
+
+void insertarAlbum(int id, string titulo, int ano){
+    Albumes *nuevo = new Albumes(id, titulo, ano);
+
+    if(headAlbumes == nullptr){
+        headAlbumes = nuevo;
+        cout << "Album ingresado con éxito." << endl;
+        return;
+    }
+
+    Albumes *temp = headAlbumes;
+    while(temp->sig != nullptr){
+        temp = temp->sig;
+    }
+
+    temp->sig = nuevo;
+    cout << "Album ingresado con éxito." << endl;
+}
+
+void insertarGenerosMusicales(int id, string nombre, string descripcion) {
+    Generos* nuevo = new Generos(id, nombre, descripcion);
+
+    if (headGeneros == nullptr) {
+        headGeneros = nuevo;
+        headGeneros->sig = headGeneros;
+        cout << "Género ingresado con éxito." << endl;
+        return;
+    }
+
+    Generos* temp = headGeneros;
+
+    while (temp->sig != headGeneros) {
+        temp = temp->sig;
+    }
+
+    temp->sig = nuevo;
+    nuevo->sig = headGeneros;
+
+    cout << "Género ingresado con éxito." << endl;
+}
+
+void insertarPlaylist(int id, string nombre, string creador, string fecha){
+    Playlists *nueva = new Playlists(id, nombre, creador, fecha);
+
+    if(headPlaylists==nullptr){
+        headPlaylists = nueva;
+        cout << "Nueva playlist agregada con éxito." << endl;
+        return;
+    }
+
+    nueva -> sig = headPlaylists;
+    headPlaylists = nueva;
+    cout << "Playlist agregada con éxito." << endl;
+}
+
+void insertarSelloDiscografico(int id, string nombre, string pais, string anoFundacion){
+    Sellos* nuevo = new Sellos(id, nombre, pais, anoFundacion);
+
+    if (headSellos == nullptr) {
+        headSellos = nuevo;
+        headSellos->sig = headSellos;
+        headSellos->ant = headSellos;
+        cout << "Sello discográfico agregado con éxito." << endl << endl;
+        return;
+    }
+
+    Sellos* ultimo = headSellos->ant;
+
+    ultimo->sig = nuevo;
+    nuevo->ant = ultimo;
+    nuevo->sig = headSellos;
+    headSellos->ant = nuevo;
+
+    cout << "Sello discográfico agregado con éxito." << endl << endl;
+}
+
+//Insertar una cancion ya creada en la sublista.
+void insertarCancionEnAlbum(int idAlbum, int idCan) {
+    Albumes* album = buscarAlbum(idAlbum);
+    Canciones* can = buscarCancion(idCan);
+    
+    if (album == nullptr) {
+        cout << "Álbum no encontrado." << endl;
+        return;
+    }
+
+    if (can == nullptr) {
+        cout << "Canción no encontrada." << endl;
+        return;
+    }
+
+    subLcanciones* nuevo = new subLcanciones(can);
+    int duracionNuevo = can->minutos * 60 + can->segundos;
+
+    if (album->subLcanciones == nullptr || 
+        duracionNuevo < (album->subLcanciones->enlace->minutos * 60 + album->subLcanciones->enlace->segundos)) {
+
+        nuevo->sig = album->subLcanciones;
+        album->subLcanciones = nuevo;
+
+    }
+    else {
+        subLcanciones* actual = album->subLcanciones;
+
+        while (actual->sig != nullptr &&
+               duracionNuevo > (actual->sig->enlace->minutos * 60 + actual->sig->enlace->segundos)) {
+            actual = actual->sig;
+        }
+
+        nuevo->sig = actual->sig;
+        actual->sig = nuevo;
+    }
+
+    album->numCanciones++;
+    cout << "Canción agregada al álbum correctamente." << endl;
+}
+
+
+
+
+void insertarCancionEnArtista(int idArtista, int idCancion) {
+    Artistas* artista = buscarArtista(idArtista);
+    Canciones *can = buscarCancion(idCancion);
+    
+    if (artista == nullptr) {
+        cout << "Artista no encontrado." << endl;
+        return;
+    }
+
+    if(can == nullptr){
+        cout << "Canción no encontrada." << endl;
+        return;
+    }
+
+    subLcanciones *nuevo = new subLcanciones(can);
+
+    if (artista->subLcanciones == nullptr) {
+        artista->subLcanciones = nuevo;
+    } else {
+        subLcanciones *temp = artista->subLcanciones;
+        while (temp->sig != nullptr) {
+            temp = temp->sig;
+        }
+        temp->sig = nuevo;
+    }
+
+    cout << "Canción agregada al artista correctamente." << endl;
+}
+
+void insertarCancionEnPlaylist(int idPlay, int idCan) {
+    Playlists* play = buscarPlaylist(idPlay);
+    Canciones *can = buscarCancion(idCan);
+    
+    if (play == nullptr) {
+        cout << "Playlist no encontrado." << endl;
+        return;
+    }
+
+    if(can == nullptr){
+        cout << "Canción no encontrada." << endl;
+        return;
+    }
+
+    subLcanciones *nuevo = new subLcanciones(can);
+
+    if (play->subLcanciones == nullptr) {
+        play->subLcanciones = nuevo;
+    } else {
+        subLcanciones *temp = play->subLcanciones;
+        while (temp->sig != nullptr) {
+            temp = temp->sig;
+        }
+        temp->sig = nuevo;
+    }
+
+    play ->canciones++;
+    cout << "Canción agregada a la playlist correctamente." << endl;
+}
+
+void insertarCancionEnGenero(int idgene, int idCan) {
+    Generos* genero = buscarGenero(idgene);
+    Canciones *can = buscarCancion(idCan);
+    
+    if (genero == nullptr) {
+        cout << "Género no encontrado." << endl;
+        return;
+    }
+
+    if(can == nullptr){
+        cout << "Canción no encontrada." << endl;
+        return;
+    }
+
+    subLcanciones *nuevo = new subLcanciones(can);
+
+    if (genero->subLcanciones == nullptr) {
+        genero->subLcanciones = nuevo;
+    } else {
+        subLcanciones *temp = genero->subLcanciones;
+        while (temp->sig != nullptr) {
+            temp = temp->sig;
+        }
+        temp->sig = nuevo;
+    }
+
+    genero -> canciones++;
+    cout << "Canción agregada al género musical correctamente." << endl;
+}
+
+void insertarAlbumEnArtista(int idArtis, int idAlb) {
+    Artistas* artista = buscarArtista(idArtis);
+    Albumes *alb= buscarAlbum(idAlb);
+    
+    if (alb == nullptr) {
+        cout << "Álbum no encontrado." << endl;
+        return;
+    }
+
+    if(artista == nullptr){
+        cout << "Artista no encontrada." << endl;
+        return;
+    }
+
+    subLAlbumes *nuevo = new subLAlbumes(alb);
+
+    if (artista->subLAlbumes == nullptr) {
+        artista->subLAlbumes = nuevo;
+    } else {
+        subLAlbumes *temp = artista -> subLAlbumes;
+        while (temp->sig != nullptr) {
+            temp = temp->sig;
+        }
+        temp->sig = nuevo;
+    }
+
+    artista->album++;
+    cout << "Álbum agregado al artista correctamente." << endl;
+}
+
+void insertarArtistaEnSello(int idSello,int arti) {
+    Sellos* sello = buscarSello(idSello);
+    Artistas *art = buscarArtista(arti);
+    
+    if (sello == nullptr) {
+        cout << "Sello discográfico no encontrado." << endl;
+        return;
+    }
+
+    if(art == nullptr){
+        cout << "Artista no encontrado." << endl;
+        return;
+    }
+
+    subLArtistas *nuevo = new subLArtistas(art);
+
+    if (sello ->subLArtistas == nullptr) {
+        sello->subLArtistas = nuevo;
+    } else {
+        subLArtistas *temp = sello->subLArtistas;
+        while (temp->sig != nullptr) {
+            temp = temp->sig;
+        }
+        temp->sig = nuevo;
+    }
+
+    cout << "Artista agregado al sello discográfico correctamente." << endl;
+}
+
+void modificarCancion(int id, string tituloNuevo){
+    Canciones *temp = buscarCancion(id);
+
+    if(temp==nullptr){
+        cout << "La canción no se encuentra ingresada." << endl;
+        return;
+    }
+
+    temp->titulo = tituloNuevo;
+    cout << "Información modificada con éxito." << endl;
+}
+
+void actualizarCancion(){
+    Canciones* temp = headCanciones;
+    int maxima = -1;
+    while (temp) {
+        int dur = temp->minutos * 60 + temp->segundos;
+        if (dur > maxima) maxima = dur;
+        temp = temp->sig;
+    }
+    duracion = maxima;
+}
+
+void eliminarCancionArtista(int idCancion, int idArtista) {
+    Artistas* tem = buscarArtista(idArtista); 
+    if (tem == nullptr) {
+        cout << "Artista no encontrado." << endl;
+        return;
+    }
+
+    subLcanciones* actual = tem->subLcanciones;
+    subLcanciones* anterior = nullptr;
+
+    while (actual != nullptr) {
+        if (actual->enlace->ID == idCancion) {
+            if (anterior == nullptr) {
+                tem->subLcanciones = actual->sig;
+            } else {
+                anterior->sig = actual->sig;
+            }
+
+            delete actual;
+            cout << "Cancion eliminada de la sublista del artista." << endl;
+            return;
+        }
+
+        anterior = actual;
+        actual = actual->sig;
+    }
+
+    cout << "Cancion no encontrada en la sublista del artista." << endl;
+}
+
+
+void eliminarCancionAlbum(int id, int albu){
+    Albumes* tem = buscarAlbum(albu); 
+    if (tem == nullptr) {
+        cout << "Álbum no encontrado." << endl;
+        return;
+    }
+
+    subLcanciones* actual = tem->subLcanciones;
+    subLcanciones* anterior = nullptr;
+
+    while (actual != nullptr) {
+        if (actual->enlace->ID == id) {
+            if (anterior == nullptr) {
+                tem->subLcanciones = actual->sig;
+            } else {
+                anterior->sig = actual->sig;
+            }
+
+            delete actual;
+            cout << "Cancion eliminada del álbum con éxito." << endl;
+            return;
+        }
+
+        anterior = actual;
+        actual = actual->sig;
+    }
+
+    cout << "Cancion no encontrada en el álbum." << endl;
+}
+
+void eliminarCancionPlaylist(int id, int play){
+    Playlists* tem = buscarPlaylist(play); 
+    if (tem == nullptr) {
+        cout << "Playlist no encontrada." << endl;
+        return;
+    }
+
+    subLcanciones* actual = tem->subLcanciones;
+    subLcanciones* anterior = nullptr;
+
+    while (actual != nullptr) {
+        if (actual->enlace->ID == id) {
+            if (anterior == nullptr) {
+                tem->subLcanciones = actual->sig;
+            } else {
+                anterior->sig = actual->sig;
+            }
+
+            delete actual;
+            cout << "Cancion eliminada de la playlist con éxito." << endl;
+            return;
+        }
+
+        anterior = actual;
+        actual = actual->sig;
+    }
+
+    cout << "Canción no encontrada en la playlist." << endl;
+}
+
+
+void buscarPlaylistsCancion(int id) {
+    Playlists* buscar = headPlaylists;
+    bool encontrar = false;
+
+    while (buscar != nullptr) {
+        subLcanciones* sub = buscar->subLcanciones;
+
+        while (sub != nullptr) {
+            if (sub->enlace->ID == id) {
+                eliminarCancionPlaylist(id,buscar->ID);
+                encontrar = true;
+            }
+            sub = sub->sig;
+        }
+
+        buscar = buscar->sig;
+    }
+    
+    if(!encontrar){
+        cout << "La cancion no se encontraba en ninguna playlist." << endl;
+    }
+
+}
+
+void eliminarCancionGenero(int id, int gen){
+    Generos *tem = buscarGenero(gen); 
+    if (tem == nullptr) {
+        cout << "Género musical no encontrada." << endl;
+        return;
+    }
+
+    subLcanciones* actual = tem->subLcanciones;
+    subLcanciones* anterior = nullptr;
+
+    while (actual != nullptr) {
+        if (actual->enlace->ID == id) {
+            if (anterior == nullptr) {
+                tem->subLcanciones = actual->sig;
+            } else {
+                anterior->sig = actual->sig;
+            }
+
+            tem->canciones --;
+            delete actual;
+            cout << "Cancion eliminada del género musical con éxito." << endl;
+            return;
+        }
+
+        anterior = actual;
+        actual = actual->sig;
+    }
+
+    cout << "Canción no encontrada en el género musical" << endl;
+}
+
+
+void buscarCancionEnGeneros(int id) {
+    Generos *buscar = headGeneros;
+    bool encontrar = false;
+
+    while (buscar != nullptr) {
+        subLcanciones* sub = buscar->subLcanciones;
+
+        while (sub != nullptr) {
+            if (sub->enlace->ID == id) {
+                eliminarCancionGenero(id,buscar->ID);
+                encontrar = true;
+            }
+            sub = sub->sig;
+        }
+
+        buscar = buscar->sig;
+    }
+    
+    if(!encontrar){
+        cout << "La cancion no se encontraba en ningún género musical." << endl;
+    }
+
+}
+
+void eliminarCancion(int id) {
+    Canciones *actual = headCanciones;
+    Canciones *ant = nullptr;
+    bool cancion = false;
+
+
+    while (actual != nullptr && actual->ID != id) {
+        ant = actual;
+        actual = actual->sig;
+    }
+
+    if (actual == nullptr){
+        cout << "Canción no encontrada." << endl;
+        return;
+    }
+
+    int duracionActual = actual->minutos * 60 + actual->segundos;
+    if (duracionActual == duracion) {
+        cancion = true;
+    }
+
+    eliminarCancionArtista(id, actual->IDartista);
+    eliminarCancionAlbum(id, actual->IDalbum);
+    buscarPlaylistsCancion(id);
+    buscarCancionEnGeneros(id);
+
+
+    if (ant == nullptr) {
+        headCanciones = actual->sig;
+    } else {
+        ant->sig = actual->sig;
+    }
+    delete actual;
+
+    if (cancion) {
+        actualizarCancion();
+    }
+
+    cout << "Canción eliminada con éxito" << endl;
+}
+
+
+void cargarDatos(){
+    insertarArtistas(23, "Beret", "Francisco Javier Álvarez Beret", "España", "Warner Music");
+    insertarArtistas(1, "Romeo Santos", "Anthony Santos", "Estados Unidos", "Sony Music Latin");
+    insertarArtistas(12, "Daddy Yankee", "Ramón Luis Ayala Rodríguez", "Puerto Rico", "El Cartel Records");
+    insertarArtistas(55, "Bad Bunny", "Benito Antonio Martínez Ocasio", "Puerto Rico", "Rimas Entertainment");
+    insertarArtistas(3, "Damiano", "Damiano David", "Italia", " Arista");
+    insertarArtistas(45, "Lisa", "Lalisa Manobal", "Tailandia", "YG Entertainment");
+    insertarArtistas(4, "Maluma", "Juan Luis Londoño Arias", "Colombia", "Royalty Records");
+    insertarArtistas(22, "The Weeknd", "Abel Makkonen Tesfaye", "Canadá", "XO");
+    insertarArtistas(10, "Adele", "Adele Laurie Blue Adkins", "Reino Unido", "XL Recordings");
+    insertarArtistas(88, "SIA", "Sia Kate Isobelle Furler", "Australia", "Atlantic Records");
+    insertarArtistas(16, "Mora", "Gabriel Armando Mora Quintero", "Puerto Rico", "Rimas Entertainment");
+    insertarArtistas(8, "Hozier", "Andrew Jonh Hozier-Byrne", "Irlanda", "Columbia Redorcs");
+    insertarArtistas(33, "Chris Grey", "Chris Grey", "Canadá", "R&B");
+    insertarArtistas(9, "Måneskin", "NA", "Italia", "Sony Music");
+    insertarArtistas(83, "Arctic Monkeys", "NA", "Reino Unido", "Domino Records");
+    insertarArtistas(66, "Mägo de Oz", "NA", "España", "Locomotive Music");
+    insertarArtistas(13, "Morat", "NA", "Colombia", "Universal Music Spain");
+ 
+    insertarAlbum(9321, "Balas Perdidas", 2018);
+    insertarAlbum(1234, "Resilencia", 2022);
+    insertarAlbum(8861, "Rush", 2023);
+    insertarAlbum(9921, "AM", 2013);
+    insertarAlbum(1111, "Golden", 2017);
+    insertarAlbum(1441, "Estrella", 2023);
+    insertarAlbum(9551, "Un Verano Sin Ti", 2022);
+    insertarAlbum(3291, "Unreal Unheart: Unending", 2024);
+    insertarAlbum(6773, "King Daddy", 2013);
+    insertarAlbum(6753, "Gaia", 2003);
+    insertarAlbum(9853, "The Castle Never Falls", 2024);
+    insertarAlbum(1147, "Pretty Boy, Dirty Boy", 2015);
+
+    insertarAlbumEnArtista(23, 1234);
+    insertarAlbumEnArtista(13, 9321);
+    insertarAlbumEnArtista(9, 8861);
+    insertarAlbumEnArtista(83, 9921);
+    insertarAlbumEnArtista(1, 1111);
+    insertarAlbumEnArtista(16, 1441);
+    insertarAlbumEnArtista(55, 9551);
+    insertarAlbumEnArtista(8, 3291);
+    insertarAlbumEnArtista(12, 6773);
+    insertarAlbumEnArtista(66, 6753);
+    insertarAlbumEnArtista(33, 9853);
+    insertarAlbumEnArtista(4, 1147);
+    
+    insertarSelloDiscografico(1, "Warner Music", "Estados Unidos", "1958");
+    insertarSelloDiscografico(2, "Sony Music Latin", "Estados Unidos", "1987");
+    insertarSelloDiscografico(3, "El Cartel Records", "Puerto Rico", "1997");
+    insertarSelloDiscografico(4, "Rimas Entertainment", "Puerto Rico", "2014");
+    insertarSelloDiscografico(5, "Arista", "Estados Unidos", "1974");
+    insertarSelloDiscografico(6, "YG Entertainment", "Corea del Sur", "1996");
+    insertarSelloDiscografico(7, "Royalty Records", "Canadá", "1974");
+    insertarSelloDiscografico(8, "XO", "Canadá", "2012");
+    insertarSelloDiscografico(9, "XL Recordings", "Reino Unido", "1989");
+    insertarSelloDiscografico(10, "Atlantic Records", "Estados Unidos", "1947");
+    insertarSelloDiscografico(11, "Columbia Records", "Estados Unidos", "1887");
+    insertarSelloDiscografico(12, "Rebellion Records", "Países Bajos", "2001");
+    insertarSelloDiscografico(13, "Sony Music", "Japón", "1968");
+    insertarSelloDiscografico(14, "Domino Records", "Reino Unido", "1993");
+    insertarSelloDiscografico(15, "Locomotive Music", "España", "1996");
+    insertarSelloDiscografico(16, "Universal Music Spain", "España", "1993");
+ 
+    insertarGenerosMusicales(1, "Pop", "Género musical popular caracterizado por melodías pegadizas y ritmos accesibles.");
+    insertarGenerosMusicales(2, "Bachata", "Género de música popular de la República Dominicana que mezcla bolero con otros estilos.");
+    insertarGenerosMusicales(3, "Reggaetón", "Género musical influenciado por el reggae en español, el dancehall y el hip-hop latino.");
+    insertarGenerosMusicales(4, "Trap Latino", "Subgénero del trap que fusiona ritmos urbanos latinos y letras explícitas.");
+    insertarGenerosMusicales(5, "Rock", "Género musical caracterizado por el uso de guitarras eléctricas, bajo y batería.");
+    insertarGenerosMusicales(6, "K-Pop", "Género musical originado en Corea del Sur que combina pop, hip hop, R&B y electrónica.");
+    insertarGenerosMusicales(7, "R&B", "Rhythm and Blues, género que combina soul, pop, funk, hip hop y electrónica.");
+    insertarGenerosMusicales(8, "Soul", "Género musical afroamericano que combina elementos del gospel y el rhythm and blues.");
+    insertarGenerosMusicales(9, "Indie Rock", "Subgénero del rock alternativo que destaca la independencia creativa y lírica.");
+    insertarGenerosMusicales(10, "Heavy Metal", "Género de rock caracterizado por riffs de guitarra pesados y baterías potentes.");
+    insertarGenerosMusicales(11, "Pop Latino", "Subgénero del pop que incorpora elementos de música latina y ritmos tropicales.");
+ 
+ 
+    insertarPlaylist(1, "Hits del Momento", "María Fernández", "2025-01-10");
+    insertarPlaylist(2, "Reggaetón de la Vieja Escuela", "Luis Rodríguez", "2025-02-15");
+    insertarPlaylist(3, "Rock Clásico", "Andrea Salas", "2025-03-05");
+    insertarPlaylist(4, "K-Pop Sensations", "Kim Min-Ji", "2025-04-01");
+    insertarPlaylist(5, "Relax y Chill", "Javier Méndez", "2025-01-20");
+    insertarPlaylist(6, "Trap Latino Power", "Diego Ramírez", "2025-02-28");
+    insertarPlaylist(7, "Heavy Metal Legends", "Sofía Vargas", "2025-03-18");
+    insertarPlaylist(8, "Pop Latino Essentials", "Ana María Torres", "2025-04-10");
+    insertarPlaylist(9, "Bachata Romántica", "Pedro Castillo", "2025-02-01");
+    insertarPlaylist(10, "Indie Rock Vibes", "Laura Herrera", "2025-03-22");
+
+    insertarCanciones(18807, "Ron", 2022, 3, 17, 1234, 23);   
+    insertarCanciones(22215, "Mammamia", 2023, 3, 06, 8861, 9);   
+    insertarCanciones(32137, "El Atrapasueños", 2003, 4, 16, 6753, 66);     
+    insertarCanciones(48281, "Sobredosis", 2017, 3, 18, 1111, 1);   
+    insertarCanciones(59292, "Let The World Burn", 2024, 2, 43, 9853, 33);
+    insertarCanciones(69876, "Too Sweet", 2024, 4, 11, 3291, 8);
+    insertarCanciones(79964, "R U Mine?", 2013, 3, 21, 9921, 83);    
+    insertarCanciones(82212, "Media Luna", 2023, 2, 15, 1441, 13);  
+    insertarCanciones(92221, "Ojitos Lindos", 2022, 4, 18, 9551, 55);   
+    insertarCanciones(12210, "Borro Cassette", 2015, 3, 27, 4, 4);
+    insertarCanciones(92021, "El día menos pensado", 2022, 3, 44, 1234, 23);
+    insertarCanciones(88123, "Beso Robado", 2022, 4, 29, 1234, 23);
+    
+
+    insertarCancionEnAlbum(1234, 88123);
+    insertarCancionEnAlbum(1234, 92021);
+    insertarCancionEnAlbum(1234, 18807);
+    insertarCancionEnAlbum(8861, 22215);
+    insertarCancionEnAlbum(6753, 32137);
+    insertarCancionEnAlbum(1111, 48281); 
+    insertarCancionEnAlbum(9853, 59292); 
+    insertarCancionEnAlbum(3291, 69876);  
+    insertarCancionEnAlbum(9921, 79964);  
+    insertarCancionEnAlbum(1441, 82212);  
+    insertarCancionEnAlbum(9551, 92221);  
+    insertarCancionEnAlbum(1147, 12210);
+
+    insertarCancionEnArtista(23, 88123);
+    insertarCancionEnArtista(23, 92021);
+    insertarCancionEnArtista(23, 18807);
+    insertarCancionEnArtista(9, 22215);
+    insertarCancionEnArtista(66, 32137);
+    insertarCancionEnArtista(1, 48281);
+    insertarCancionEnArtista(33, 59292);
+    insertarCancionEnArtista(8, 69876);
+    insertarCancionEnArtista(83, 79964);
+    insertarCancionEnArtista(13, 82212);
+    insertarCancionEnArtista(55, 92221);
+    insertarCancionEnArtista(4, 12210);
+
+
+    insertarCancionEnPlaylist(1, 18807);
+    insertarCancionEnPlaylist(2, 22215);
+    insertarCancionEnPlaylist(3, 32137);
+    insertarCancionEnPlaylist(4, 69876);
+    insertarCancionEnPlaylist(5, 48281);
+    insertarCancionEnPlaylist(6, 59292);
+    insertarCancionEnPlaylist(7, 79964);
+    insertarCancionEnPlaylist(8, 82212);
+    insertarCancionEnPlaylist(9, 92221);
+    insertarCancionEnPlaylist(10, 12210);
+
+
+    insertarCancionEnGenero(3, 18807);
+    insertarCancionEnGenero(5, 22215);
+    insertarCancionEnGenero(5, 32137);
+    insertarCancionEnGenero(3, 48281); 
+    insertarCancionEnGenero(4, 59292);
+    insertarCancionEnGenero(6, 69876);
+    insertarCancionEnGenero(5, 79964);
+    insertarCancionEnGenero(11, 82212);
+    insertarCancionEnGenero(2, 92221);
+    insertarCancionEnGenero(5, 12210);
+
+    insertarArtistaEnSello(1, 23);
+    insertarArtistaEnSello(2, 1); 
+    insertarArtistaEnSello(3, 12);
+    insertarArtistaEnSello(4, 55);
+    insertarArtistaEnSello(5, 3);
+    insertarArtistaEnSello(6, 45);
+    insertarArtistaEnSello(7, 4);
+    insertarArtistaEnSello(8, 22);
+    insertarArtistaEnSello(9, 10);
+    insertarArtistaEnSello(10, 88);
+    insertarArtistaEnSello(11, 13);
+    insertarArtistaEnSello(12, 8);
+    insertarArtistaEnSello(13, 33);
+    insertarArtistaEnSello(14, 9);
+    insertarArtistaEnSello(15, 83);
+    insertarArtistaEnSello(16, 66);
+    insertarArtistaEnSello(1, 13);
+}
+
+
+/*Funciones de consultas del sistema*/
+
+void GeneroMasCanciones(){
+    int i = -1;
+    if(headGeneros==nullptr){
+        cout << "No existen géneros musicales." << endl;
+        return;
+    }
+
+
+
+    
+    else{
+    }
+}
+
+void ArtistaMasAlbum(){
+    if(headArtistas==nullptr){
+        cout << "No hay albumes ingresados." << endl;
+        return;
+    }
+
+    Artistas *temp = headArtistas;
+    int maxi = -1;
+
+    while(temp!=nullptr){
+        if(temp->album>maxi){
+            maxi = temp->album;
+        }
+
+        temp = temp->sig;
+    }
+
+    int i = 1;
+    temp = headArtistas;
+    cout << "Artistas con más álbumes publicados: " << endl;
+
+    while (temp!=nullptr){
+        
+        if(temp->album==maxi){
+            cout << i << "- " << temp->nombreArtista << endl;
+            i++;
+        }
+
+        temp = temp->sig;
+    }
+
+    cout << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
+}
+
+void CancionMasLarga() {
+    if (headCanciones == nullptr) {
+        cout << "No existen canciones registradas en la base de datos." << endl;
+        return;
+    }
+    Canciones *temp = headCanciones;
+    int i = 1;
+
+    cout << "~~~~~~~~~~~~~~~~ Canciones con mayor duración ~~~~~~~~~~~~~~~~" << endl << endl;
+    while (temp != nullptr) {
+        int duracionActual = temp->minutos * 60 + temp->segundos;
+        if (duracionActual == duracion) {
+            cout << i << "- " << temp->titulo << endl << "Tiempo: " << temp->minutos << ":" << temp->segundos << endl;
+            i++;
+        }
+        temp = temp->sig;
+    }
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+}
+
+void PlaylistMasCanciones(){
+    if(headPlaylists==nullptr){
+        cout << "No hay playlist ingresadas en el sistema." << endl;
+        return;
+    }
+
+    Playlists *temp = headPlaylists;
+    int maxi = -1;
+
+    while(temp!=nullptr){
+        if(temp->canciones>maxi){
+            maxi = temp->canciones;
+        }
+
+        temp = temp -> sig;
+    }
+
+    cout << "Playlist con más canciones: " << endl;
+    temp = headPlaylists;
+    int i = 1;
+
+    while(temp!=nullptr){
+
+        if(temp->canciones == maxi){
+            cout << i << "- " << temp->nombre << endl;
+            i++;
+        }
+
+        temp = temp ->sig;
+    }
+
+    cout << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
+}
+
+void albumArtista(){
+    if(headArtistas == nullptr){ 
+        cout << "No hay artistas registrados." << endl;
+        return;
+    }
+
+    Artistas *temp = headArtistas;
+
+    cout << " ~~~~~~~~~~~~~~~~~~~~~ Álbumes por artista ~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
+
+    while(temp != nullptr){
+        cout << "Artista: " << temp->nombreArtista << endl << "Álbumes: " << temp->album << endl;
+        cout << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
+        temp = temp ->sig; 
+    }
+
+}
+
+void SelloMasArtistas(){
+    if(headSellos==nullptr){
+        cout << "No hay sellos discográficos ingresados." << endl;
+        return;
+    }
+
+    int maxi = -1;
+    Sellos *temp = headSellos;
+
+    do{
+        if(temp->artistas>maxi){
+            maxi = temp->artistas;
+        }
+
+        temp = temp ->sig;
+
+    }while(temp!=headSellos);
+
+    cout << "Sellos con más cantidad de artistas: " << endl;
+    int i = 1;
+
+    do{
+        if(temp->artistas==maxi){
+            cout << i << "- " << temp->nombre << endl;
+            i++;
+        }
+
+        temp = temp ->sig;
+
+    }while(temp!=headSellos);
+
+    cout << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
+}
+
+void CancionesPorAno(int ano){
+    if(headCanciones==nullptr){
+        cout << "No hay canciones ingresadas." << endl;
+        return;
+    }
+
+    bool encontrado = true;
+    int i = 1;
+
+    Canciones *temp = headCanciones;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Canciones del " << ano << " ~~~~~~~~~~~~~~~~~~~~~" <<endl;
+    while(temp!=nullptr){
+        if(temp->ano==ano){
+            cout << i << "- " << temp->titulo << endl;
+            i++;
+            encontrado = false;
+        }
+
+        temp = temp->sig;
+    }
+
+    if(encontrado){
+        cout << "No hay canciones del " << ano << endl;
+    }
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+}
+
+void AlbumMasCanciones(int n){
+    if(headAlbumes==nullptr){
+        cout << "No hay álbumes ingresados." << endl;
+        return;
+    }
+
+    bool encontrado = true;
+    Albumes *temp = headAlbumes;
+    int i=1;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~Álbumes con más de " << n << " canciones. ~~~~~~~~~~~~~~~~~~~~~" << endl;
+    while(temp!=nullptr){
+        if(temp->numCanciones>n){
+            cout << i << "- " << temp->titulo << endl;
+            i++;
+            encontrado = false;
+        }
+
+        temp = temp->sig;
+    }
+
+    if(encontrado){
+        cout << "No hay álbumes con más de " << n << "caniones." << endl;
+    }
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+}
+
+/*Fuinciones para reportes*/
+
+void imprimirArtistas(){
+    if(headArtistas==nullptr){
+        cout << "No hay artistas ingresados en la base de datos." << endl;
+        return;
+    }
+
+    Artistas *temp = headArtistas;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Artistas ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    while(temp!=nullptr){
+
+        cout << "Nombre real: " << temp->nombre << endl << "Nombre artístico: " << temp->nombreArtista <<
+        endl << "Identificador: " << temp->ID << endl << "País: " << temp->pais << endl << "Sello Discográfico: " <<
+        temp->sello << endl << "Albumes: " << temp->album << endl;
+
+        cout << endl << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+    }
+
+}
+
+void imprimirCanciones(){
+    if(headCanciones==nullptr){
+        cout << "No hay canciones registradas en el sistema." << endl;
+        return;
+    }
+
+    Canciones *temp = headCanciones;
+
+    cout << " ~~~~~~~~~~~~~~~~~~~~~~ Canciones ~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
+    temp = temp->sig;
+    while(temp!=nullptr){
+
+        if(temp->segundos<10){
+            cout << "Título: " << temp->titulo << endl << "Duración: " << temp->minutos << ":0" << 
+            temp->segundos << endl << "Año: " << temp->ano << endl << "Identificador de canción: " << 
+            temp->ID << endl << "Identificador de álbum: " << temp->IDalbum << endl << 
+            "Identificador de artista: " << temp->IDartista << endl;
+        }
+        else{
+        cout << "Título: " << temp->titulo << endl << "Duración: " << temp->minutos << ":" << temp->segundos
+        << endl << "Año: " << temp->ano << endl << "Identificador de canción: " << temp->ID << endl <<
+        "Identificador de álbum: " << temp->IDalbum << endl << "Identificador de artista: " << 
+        temp->IDartista << endl;
+        }
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+    }
+}
+
+void imprimirAlbumes(){
+    if (headAlbumes==nullptr){
+        cout << "No hay álbumes ingresados en el sistema." << endl;
+        return;
+    }
+
+    Albumes *temp = headAlbumes;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Álbumes ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    while(temp!=nullptr){
+        subLcanciones *tempo = temp->subLcanciones;
+
+        cout << "Nombre: " << temp->titulo << endl << "Identificador de canciones: " << temp->ID << endl << 
+        "Año: " << temp->ano << endl << "Número de canciones: " << temp->numCanciones << endl;
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+    }
+}
+
+void imprimirGeneros(){
+    if(headGeneros==nullptr){
+        cout << "No hay géneros ingresados en el sistema." << endl;
+        return;
+    }
+
+    Generos *temp = headGeneros;
+
+    cout <<  "~~~~~~~~~~~~~~~~~~~~~ Géneros ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    do{
+        cout << "Nombre: " << temp->nombre << endl << "Identificador: " << temp->ID << endl <<
+        "Cantidad de canciones: " << temp->canciones << endl << "Descripción: " << temp->descripcion << endl;
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+
+    }while(temp!=headGeneros);
+}
+
+void imprimirPlaylist(){
+    if(headPlaylists==nullptr){
+        cout << "No hay playlist registradas." << endl;
+        return;
+    }
+
+    Playlists *temp = headPlaylists;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Géneros ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    while(temp!=nullptr){
+        cout << "Nombre: " << temp->nombre << endl << "Creador: " << temp->creador << endl << "Identificador: " 
+        << temp->ID << endl << "Fecha de creacion: " << temp->fecha << endl << "Número de canciones: " << 
+        temp->canciones << endl;
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+    }
+}
+
+void imprimirSellos(){
+    if(headSellos==nullptr){
+        cout << "No hay sellos discográficos ingresados." << endl;
+        return;
+    }
+
+    Sellos *temp = headSellos;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Sellos ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    do{
+        cout << "Nombre: " << temp->nombre << endl << "Identificador: " << temp->ID << endl << 
+        "País: " << temp->pais << endl << "Año de fundación: " << temp->ano << endl << "Número de artistas: " 
+        << temp->artistas << endl;
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+    } while(temp!=headSellos);
+}
+
+void imprimirTodo(){
+    imprimirArtistas();
+    imprimirCanciones();
+    imprimirAlbumes();
+    imprimirGeneros();
+    imprimirPlaylist();
+    imprimirSellos();
+}
+
+void reportesArtistas(){
+    if(headArtistas==nullptr){
+        cout << "No hay artistas ingresados en la base de datos." << endl;
+        return;
+    }
+
+    Artistas *temp = headArtistas;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Artistas ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    while(temp!=nullptr){
+
+        cout << "Nombre real: " << temp->nombre << endl << "Nombre artístico: " << temp->nombreArtista <<
+        endl << "Identificador: " << temp->ID << endl << "País: " << temp->pais << endl << "Sello Discográfico: " <<
+        temp->sello << endl << " ~~~~~~~~~~~~ Álbumes ~~~~~~~~~~~~ " << endl;
+
+        subLAlbumes *tempo = temp->subLAlbumes;
+        int i = 1;
+
+        while(tempo!=nullptr){
+            int j = 1;
+            cout << i << "- " << tempo->enlace->titulo << ": " << endl ;
+            subLcanciones *tempa = tempo->enlace->subLcanciones;
+
+            while(tempa!=nullptr){
+                cout << "\t" << j << "- " << tempa->enlace->titulo << endl;
+
+                tempa = tempa->sig;
+                j++;
+            }
+
+            tempo = tempo ->sig; 
+            i++;
+        }
+
+        cout << endl << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+
+    }
+}
+
+void imprimirPlaylistCanciones(){
+    if(headPlaylists==nullptr){
+        cout << "No hay playlist registradas en el sistema" << endl;
+        return;
+    }
+
+    Playlists *temp = headPlaylists;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Playlist ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    while(temp!=nullptr){
+        subLcanciones *tempo = temp->subLcanciones;
+        int i=1;
+        
+        cout << " ~~~~~~~~~~~~~~~~~~~~ " << temp->nombre << " ~~~~~~~~~~~~~~~~~~~~ " << endl;
+        while(tempo!=nullptr){
+            
+            cout << i << "- " << tempo->enlace->titulo << endl;
+
+            tempo = tempo->sig;
+            i++;
+        }
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+    }
+}
+
+
+void ImprimirAlbumesCanciones(){
+    if (headAlbumes==nullptr){
+        cout << "No hay álbumes ingresados en el sistema." << endl;
+        return;
+    }
+
+    Albumes *temp = headAlbumes;
+
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Álbumes ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    while(temp!=nullptr){
+        subLcanciones *tempo = temp->subLcanciones;
+        int i=1;
+        
+        cout << " ~~~~~~~~~~~~~~~~~~~~ Canciones ~~~~~~~~~~~~~~~~~~~~ " << endl;
+        while(tempo!=nullptr){
+            
+            cout << i << "- " << tempo->enlace->titulo << endl;
+            if(tempo->enlace->segundos < 10){
+                cout << "Duracion: "  << tempo->enlace->minutos << ":0" << tempo->enlace->segundos << endl;
+            }
+            cout << "Duracion: "  << tempo->enlace->minutos << ":" << tempo->enlace->segundos << endl;
+
+            tempo = tempo->sig;
+            i++;
+        }
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+        temp = temp->sig;
+    }
+}
+
+void imprimirSellosArtista(){
+    if(headSellos==nullptr){
+        cout << "No hay sellos discográficos agregados." << endl;
+        return;
+    }
+
+    Sellos *temp = headSellos;
+    int i = 1;
+
+    cout << " ~~~~~~~~~~~~~~~~~~~~~~ Sellos Discográficos ~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
+    do{
+        
+        subLArtistas *tempo = temp->subLArtistas;
+        int j = 1;
+
+        cout << i << "- " << temp->nombre << endl << endl << " ~~~~~~~~ Artistas ~~~~~~~~ " << endl;
+        while(tempo!=nullptr){
+            cout << j << "- " << tempo ->enlace->nombreArtista << endl;
+            tempo = tempo->sig;
+
+        }
+
+        cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        temp = temp->sig;
+
+    }while(temp!=headSellos);
+
+}
+
+int main(){
+    cargarDatos();
+    ArtistaMasAlbum();
+    return 0;
+}
