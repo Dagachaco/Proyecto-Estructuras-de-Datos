@@ -1,7 +1,4 @@
-/* Verificar si en playlist y generos se actualizan en insercion y eliminación correctamente el número de canciones por cada una,
-Falta eliminar artista
-Modificar y eliminar: Album, genero musical, sello discografico y playlist
-El menu interactivo */
+/* Verificar si en playlist y generos se actualizan en insercion y eliminación correctamente el número de canciones por cada una*/
 
 #include <iostream>
 #include <cctype> //Biblioteca para validar entradas de string;
@@ -1027,7 +1024,7 @@ void modificarArtistaSello(int id, string nuevoSello, int idSello){
         return;
     }
 
-    borrarSelloArtista(buscar);
+    borrarSelloArtista(idSello, id);
 
     temp->sello = nuevoSello;
     
@@ -1035,23 +1032,294 @@ void modificarArtistaSello(int id, string nuevoSello, int idSello){
 
 }
 
-void modificarArtistaCanciones(int idArti, int idCan){
+void buscarArtistaSello(int idArti){
+    if(headSellos==nullptr){
 
+    }
 }
 
-void modificarArtistaAlbum(int idArti, int idAlbu){
+void eliminarAlbumArtista(int idAlb, int idArti) {
+    Artistas *arti = buscarArtista(idArti);
 
+    if (arti == nullptr) {
+        cout << "El artista no se encuentra ingresado." << endl;
+        return;
+    }
+
+    subLAlbumes *tempo = arti->subLAlbumes;
+    subLAlbumes *ant = nullptr;
+
+    while (tempo != nullptr && tempo->enlace->ID != idAlb) {
+        ant = tempo;
+        tempo = tempo->sig;
+    }
+
+    if (tempo == nullptr) {
+        cout << "Álbum no encontrado." << endl;
+        return;
+    }
+
+    // Eliminar canciones del álbum
+    subLcanciones *cancion = tempo->enlace->subLcanciones;
+    while (cancion != nullptr) {
+        subLcanciones *tempCancion = cancion;
+        cancion = cancion->sig;
+        delete tempCancion;
+    }
+
+    if (ant == nullptr) {
+        arti->subLAlbumes = tempo->sig;
+    } else {
+        ant->sig = tempo->sig;
+    }
+
+    delete tempo;
+
+    cout << "Álbum eliminado con éxito." << endl;
+}
+
+void eliminarArtista(int idArti) {
+    Artistas *eliminar = buscarArtista(idArti);
+
+    if (eliminar == nullptr) {
+        cout << "El artista no se encuentra ingresado en el sistema." << endl;
+        return;
+    }
+
+    subLcanciones *temp = eliminar->subLcanciones;
+
+    while(temp!=nullptr){
+        eliminarCancionArtista(temp->enlace->ID, idArti);
+        temp = temp->sig;
+    }
+
+    subLAlbumes *temp = eliminar->subLAlbumes;
+
+    while(temp!=nullptr){
+        eliminarAlbumArtista(temp->enlace->ID, idArti);
+        temp = temp->sig;
+    }
+
+    buscarArtistaSello(idArti);
+
+    if (eliminar->ant != nullptr)
+        eliminar->ant->sig = eliminar->sig;
+    else
+        headArtistas = eliminar->sig;
+
+    if (eliminar->sig != nullptr)
+        eliminar->sig->ant = eliminar->ant;
+
+    delete eliminar;
+
+    cout << "Artista eliminado con éxito." << endl;
 }
 
 void modificarAlbumNombre(int idAlbu, string nuevoNombre){
+    Albumes *buscar = buscarAlbum(idAlbu);
+
+    if(buscar==nullptr){
+        cout << "El álbum no se encuentra ingresado en el sistema." << endl;
+    }
+
+    buscar->titulo = nuevoNombre;
+    cout << "Nombre del álbum modificado con éxito" << endl;
+}
+
+void eliminarAlbumes(int idAlb){
+    Albumes *eliminar = headAlbumes;
+    Albumes *ant = nullptr;
+
+    while(eliminar!=nullptr || eliminar->ID!=idAlb){
+        ant = eliminar;
+        eliminar = eliminar -> sig;
+    }
+    if(eliminar==nullptr){
+        cout << "El álbum no se encuentra ingresado." << endl;
+        return;
+    }
+
+    subLcanciones *cancion = eliminar->subLcanciones;
+    while (cancion != nullptr) {
+        subLcanciones *tempCancion = cancion;
+        cancion = cancion->sig;
+        delete tempCancion;
+    }
+
+    if(ant!=nullptr){
+        ant->sig = eliminar->sig;
+    }
+    else{
+        headAlbumes = eliminar->sig;
+    }
+
+    delete eliminar;
+    cout << "Álbum eliminado con éxito." << endl;
+}
+
+void modificarDescripcionGenero(int id, string nuevaDescripcion){
+    Generos *tempo = buscarGenero(id);
+
+    if(tempo==nullptr){
+        cout << "El género musical no se encuentra ingresado." << endl;
+        return;
+    }
+
+    tempo->descripcion = nuevaDescripcion;
+    cout << "Descripción modificada con éxito." << endl;
+}
+
+void eliminarGeneros(int id) {
+    if (headGeneros == nullptr) {
+        cout << "No hay géneros musicales registrados." << endl;
+        return;
+    }
+
+    Generos *eliminar = headGeneros;
+    Generos *ant = nullptr;
+
+    do {
+        if (eliminar->ID == id) break;
+        ant = eliminar;
+        eliminar = eliminar->sig;
+    } while (eliminar != headGeneros);
+
+    if (eliminar->ID != id) {
+        cout << "El género musical no se encuentra ingresado." << endl;
+        return;
+    }
+
+    subLcanciones *tempo = eliminar->subLcanciones;
+    while (tempo != nullptr) {
+        subLcanciones *tempDel = tempo;
+        tempo = tempo->sig;
+        delete tempDel;
+    }
+
+    if (eliminar == headGeneros && eliminar->sig == headGeneros) {
+        headGeneros = nullptr;
+    } else {
+        if (eliminar == headGeneros) {
+            Generos *ultimo = headGeneros;
+            while (ultimo->sig != headGeneros) {
+                ultimo = ultimo->sig;
+            }
+            headGeneros = eliminar->sig;
+            ultimo->sig = headGeneros;
+        } else {
+            ant->sig = eliminar->sig;
+        }
+    }
+
+    delete eliminar;
+    cout << "Género musical eliminado con éxito." << endl;
+}
+
+void modificarNombrePlaylist(int id, string nuevoNombre){
+    Playlists *modificar = buscarPlaylist(id);
+
+    if(modificar==nullptr){
+        cout << "La playlist no se encuentra ingresada en el sistema." << endl;
+        return;
+    }
+
+    modificar->nombre = nuevoNombre;
+    cout << "Nombre modificado con éxito." << endl;
+}
+
+void eliminarPlaylist(int id){
+    Playlists *temp = headPlaylists;
+    Playlists *ante = nullptr;
+
+    while(temp!=nullptr || temp->ID!=id){
+        ante = temp;
+        temp = temp ->sig;
+    }
+
+    if(temp==nullptr){
+        cout << "Playlist no encontrada en el sistema." << endl;
+        return;
+    }
+
+    if(ante!=nullptr){
+        ante->sig = temp->sig;
+    }
+    else{
+        headPlaylists = temp->sig;
+    }
+
+    subLcanciones *tempo = temp->subLcanciones;
+    while(tempo!=nullptr){
+        eliminarCancionPlaylist(tempo->enlace->ID, id);
+        tempo = tempo->sig;
+    }
+
+    delete temp;
+    cout << "La playlist ha sido eliminado con éxito." << endl;
+}
+
+void modificarSelloNombre(int id, string nuevoNombre){
+    Sellos *modificar = buscarSello(id);
+
+    if(modificar==nullptr){
+        cout << "El sello discográfico no se encuentra ingresado." << endl;
+        return;
+    }
+
+    modificar->nombre = nuevoNombre;
+    cout << "El nombre del sello discográfico ha sido modificado con éxito." << endl;
+}
+
+void modificarSelloPais(int id, string nuevoPais){
+    Sellos *modificar = buscarSello(id);
+
+    if(modificar==nullptr){
+        cout << "El sello discográfico no se encuentra ingresado." << endl;
+        return;
+    }
+
+    modificar->pais = nuevoPais;
+    cout << "El país del sello discográfico ha sido modificado con éxito." << endl;
 
 }
 
-void modificarNumeroCanciones(int idAlbu, int idCanci){
+void eliminarArtistaSello(int idArti, int idSello){
 
 }
 
+void eliminarSello(int id){
+    Sellos *eliminar = headSellos;
+    Sellos *ant = nullptr;
 
+    if(headSellos==nullptr){
+        cout << "No hay sellos discográficos ingresados en el sistema." << endl;
+        return;
+    }
+
+    do{
+        ant = eliminar;
+        eliminar = eliminar->sig;
+    } while(eliminar!=headSellos || eliminar->ID==id);
+
+    if(eliminar->ID!=id){
+        cout << "El sello discográfico no se encuentra ingresado." << endl;
+        return;
+    }
+
+    ant->sig = eliminar->sig;
+    eliminar->sig->ant = ant;
+
+    subLArtistas *borrar = eliminar->subLArtistas;
+
+    while(borrar!=nullptr){
+        eliminarArtistaSello(borrar->enlace->ID, id);
+        borrar = borrar->sig;
+    }
+
+    delete eliminar;
+    cout << "El sello discográfico ha sido eliminado con éxito." << endl;
+
+}
 
 //Funciones para la carga de datos
 void cargarDatos(){
@@ -1222,7 +1490,6 @@ void cargarDatos(){
     insertarArtistaEnSello(16, 66);
     insertarArtistaEnSello(1, 13);
 }
-
 
 /*Funciones de consultas del sistema*/
 
