@@ -1093,11 +1093,11 @@ void eliminarArtista(int idArti) {
         temp = temp->sig;
     }
 
-    subLAlbumes *temp = eliminar->subLAlbumes;
+    subLAlbumes *tempo = eliminar->subLAlbumes;
 
-    while(temp!=nullptr){
-        eliminarAlbumArtista(temp->enlace->ID, idArti);
-        temp = temp->sig;
+    while(tempo!=nullptr){
+        eliminarAlbumArtista(tempo->enlace->ID, idArti);
+        tempo = tempo->sig;
     }
 
     buscarArtistaSello(idArti);
@@ -1120,6 +1120,7 @@ void modificarAlbumNombre(int idAlbu, string nuevoNombre){
 
     if(buscar==nullptr){
         cout << "El álbum no se encuentra ingresado en el sistema." << endl;
+        return;
     }
 
     buscar->titulo = nuevoNombre;
@@ -1130,7 +1131,7 @@ void eliminarAlbumes(int idAlb){
     Albumes *eliminar = headAlbumes;
     Albumes *ant = nullptr;
 
-    while(eliminar!=nullptr || eliminar->ID!=idAlb){
+    while(eliminar!=nullptr && eliminar->ID!=idAlb){
         ant = eliminar;
         eliminar = eliminar -> sig;
     }
@@ -1231,7 +1232,7 @@ void eliminarPlaylist(int id){
     Playlists *temp = headPlaylists;
     Playlists *ante = nullptr;
 
-    while(temp!=nullptr || temp->ID!=id){
+    while(temp!=nullptr && temp->ID!=id){
         ante = temp;
         temp = temp ->sig;
     }
@@ -1240,13 +1241,7 @@ void eliminarPlaylist(int id){
         cout << "Playlist no encontrada en el sistema." << endl;
         return;
     }
-
-    if(ante!=nullptr){
-        ante->sig = temp->sig;
-    }
-    else{
-        headPlaylists = temp->sig;
-    }
+    ante->sig = temp->sig;
 
     subLcanciones *tempo = temp->subLcanciones;
     while(tempo!=nullptr){
@@ -1284,6 +1279,36 @@ void modificarSelloPais(int id, string nuevoPais){
 }
 
 void eliminarArtistaSello(int idArti, int idSello){
+    Sellos *buscar = buscarSello(idSello);
+
+    if(buscar == nullptr){
+        cout << "No hay sellos discográficos ingresados en el sistema" << endl;
+        return;
+    }
+
+    subLArtistas* actual = buscar->subLArtistas;
+    subLArtistas* anterior = nullptr;
+
+    while (actual != nullptr) {
+        if (actual->enlace->ID == idArti) {
+            if (anterior == nullptr) {
+                buscar->subLArtistas = actual->sig;
+            } else {
+                anterior->sig = actual->sig;
+            }
+
+            delete actual;
+            buscar->artistas--;
+            cout << "Artista eliminado del sello con éxito." << endl;
+            return;
+        }
+
+        anterior = actual;
+        actual = actual->sig;
+    }
+
+    cout << "Artista no encontrado en el sello." << endl;
+
 
 }
 
@@ -1299,7 +1324,7 @@ void eliminarSello(int id){
     do{
         ant = eliminar;
         eliminar = eliminar->sig;
-    } while(eliminar!=headSellos || eliminar->ID==id);
+    } while(eliminar!=headSellos);
 
     if(eliminar->ID!=id){
         cout << "El sello discográfico no se encuentra ingresado." << endl;
@@ -1492,7 +1517,6 @@ void cargarDatos(){
 }
 
 /*Funciones de consultas del sistema*/
-
 void GeneroMasCanciones(){
     int maxi = -1;
     if(headGeneros==nullptr){
@@ -1507,6 +1531,8 @@ void GeneroMasCanciones(){
         if(temp->canciones > maxi){
             maxi = temp->canciones;
         }
+
+        temp =  temp->sig;
     } while (temp!=headGeneros);
 
     int i = 1;
@@ -1754,7 +1780,6 @@ void imprimirCanciones(){
     Canciones *temp = headCanciones;
 
     cout << " ~~~~~~~~~~~~~~~~~~~~~~ Canciones ~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
-    temp = temp->sig;
     while(temp!=nullptr){
 
         if(temp->segundos<10){
@@ -1822,7 +1847,7 @@ void imprimirPlaylist(){
 
     Playlists *temp = headPlaylists;
 
-    cout << "~~~~~~~~~~~~~~~~~~~~~ Géneros ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
+    cout << "~~~~~~~~~~~~~~~~~~~~~ Playlist ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
     while(temp!=nullptr){
         cout << "Nombre: " << temp->nombre << endl << "Creador: " << temp->creador << endl << "Identificador: " 
         << temp->ID << endl << "Fecha de creacion: " << temp->fecha << endl << "Número de canciones: " << 
@@ -1861,66 +1886,86 @@ void imprimirTodo(){
     imprimirSellos();
 }
 
-void reportesArtistas(){
-    if(headArtistas==nullptr){
+void reportesArtistas() {
+    if (headArtistas == nullptr) {
         cout << "No hay artistas ingresados en la base de datos." << endl;
         return;
     }
 
-    Artistas *temp = headArtistas;
+    Artistas* temp = headArtistas;
 
     cout << "~~~~~~~~~~~~~~~~~~~~~ Artistas ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
-    while(temp!=nullptr){
+    while (temp != nullptr) {
+        cout << "Nombre real: " << temp->nombre << endl << "Nombre artístico: " << temp->nombreArtista << endl << "Identificador: " 
+        << temp->ID << endl << "País: " << temp->pais << endl<< "Sello Discográfico: " << temp->sello << endl;
 
-        cout << "Nombre real: " << temp->nombre << endl << "Nombre artístico: " << temp->nombreArtista <<
-        endl << "Identificador: " << temp->ID << endl << "País: " << temp->pais << endl << "Sello Discográfico: " <<
-        temp->sello << endl << " ~~~~~~~~~~~~ Álbumes ~~~~~~~~~~~~ " << endl;
+        if (temp->subLAlbumes == nullptr) {
+            cout << "Las listas de albumes y artistas están vacías." << endl;
+            cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+        } else {
+            cout << " ~~~~~~~~~~~~ Álbumes ~~~~~~~~~~~~ " << endl;
 
-        subLAlbumes *tempo = temp->subLAlbumes;
-        int i = 1;
+            subLAlbumes* tempo = temp->subLAlbumes;
+            int i = 1;
 
-        while(tempo!=nullptr){
-            int j = 1;
-            cout << i << "- " << tempo->enlace->titulo << ": " << endl ;
-            subLcanciones *tempa = tempo->enlace->subLcanciones;
+            while (tempo != nullptr) {
+                if (tempo->enlace != nullptr) {
+                    cout << i << "- " << tempo->enlace->titulo << ": " << endl;
+                    subLcanciones* tempa = tempo->enlace->subLcanciones;
 
-            while(tempa!=nullptr){
-                cout << "\t" << j << "- " << tempa->enlace->titulo << endl;
+                    if (tempa == nullptr) {
+                        cout << "No hay canciones ingresadas en el álbum." << endl;
+                    } 
+                    else {
+                        int j = 1;
+                        while (tempa != nullptr) {
+                            if (tempa->enlace != nullptr) {
+                                cout << "\t" << j << "- " << tempa->enlace->titulo << endl;
+                            }
+                            tempa = tempa->sig;
+                            j++;
+                        }
+                    }
+                } 
+                else {
+                    cout << "Álbum no válido o sin enlace." << endl;
+                }
 
-                tempa = tempa->sig;
-                j++;
+                tempo = tempo->sig;
+                i++;
             }
-
-            tempo = tempo ->sig; 
-            i++;
         }
 
         cout << endl << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
         temp = temp->sig;
-
     }
 }
 
-void imprimirPlaylistCanciones(){
-    if(headPlaylists==nullptr){
+void imprimirPlaylistCanciones() {
+    if (headPlaylists == nullptr) {
         cout << "No hay playlist registradas en el sistema" << endl;
         return;
     }
 
-    Playlists *temp = headPlaylists;
+    Playlists* temp = headPlaylists;
 
     cout << "~~~~~~~~~~~~~~~~~~~~~ Playlist ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
-    while(temp!=nullptr){
-        subLcanciones *tempo = temp->subLcanciones;
-        int i=1;
-        
-        cout << " ~~~~~~~~~~~~~~~~~~~~ " << temp->nombre << " ~~~~~~~~~~~~~~~~~~~~ " << endl;
-        while(tempo!=nullptr){
-            
-            cout << i << "- " << tempo->enlace->titulo << endl;
+    while (temp != nullptr) {
+        subLcanciones* tempo = temp->subLcanciones;
+        int i = 1;
 
-            tempo = tempo->sig;
-            i++;
+        cout << " ~~~~~~~~~~~~~~~~~~~~ " << temp->nombre << " ~~~~~~~~~~~~~~~~~~~~ " << endl;
+        if (tempo == nullptr || tempo->enlace == nullptr) {
+            cout << "No hay canciones ingresadas en la playlist." << endl;
+        } 
+        else {
+            while (tempo != nullptr) {
+                if (tempo->enlace != nullptr) {
+                    cout << i << "- " << tempo->enlace->titulo << endl;
+                }
+                tempo = tempo->sig;
+                i++;
+            }
         }
 
         cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
@@ -1928,31 +1973,32 @@ void imprimirPlaylistCanciones(){
     }
 }
 
-
-void ImprimirAlbumesCanciones(){
-    if (headAlbumes==nullptr){
+void ImprimirAlbumesCanciones() {
+    if (headAlbumes == nullptr) {
         cout << "No hay álbumes ingresados en el sistema." << endl;
         return;
     }
 
-    Albumes *temp = headAlbumes;
+    Albumes* temp = headAlbumes;
 
     cout << "~~~~~~~~~~~~~~~~~~~~~ Álbumes ~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
-    while(temp!=nullptr){
-        subLcanciones *tempo = temp->subLcanciones;
-        int i=1;
-        
-        cout << " ~~~~~~~~~~~~~~~~~~~~ Canciones ~~~~~~~~~~~~~~~~~~~~ " << endl;
-        while(tempo!=nullptr){
-            
-            cout << i << "- " << tempo->enlace->titulo << endl;
-            if(tempo->enlace->segundos < 10){
-                cout << "Duracion: "  << tempo->enlace->minutos << ":0" << tempo->enlace->segundos << endl;
-            }
-            cout << "Duracion: "  << tempo->enlace->minutos << ":" << tempo->enlace->segundos << endl;
+    while (temp != nullptr) {
+        subLcanciones* tempo = temp->subLcanciones;
+        int i = 1;
 
-            tempo = tempo->sig;
-            i++;
+        if (tempo == nullptr) {
+            cout << "El álbum no tiene canciones ingresadas." << endl;
+        } else {
+            cout << " ~~~~~~~~~~~~~~~~~~~~ Canciones ~~~~~~~~~~~~~~~~~~~~ " << endl;
+            while (tempo != nullptr) {
+                if (tempo->enlace != nullptr) {
+                    cout << i << "- " << tempo->enlace->titulo << endl;
+                    cout << "Duración: " << tempo->enlace->minutos << ":"
+                         << (tempo->enlace->segundos < 10 ? "0" : "") << tempo->enlace->segundos << endl;
+                }
+                tempo = tempo->sig;
+                i++;
+            }
         }
 
         cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl << endl;
@@ -1960,35 +2006,485 @@ void ImprimirAlbumesCanciones(){
     }
 }
 
-void imprimirSellosArtista(){
-    if(headSellos==nullptr){
+void imprimirSellosArtista() {
+    if (headSellos == nullptr) {
         cout << "No hay sellos discográficos agregados." << endl;
         return;
     }
 
-    Sellos *temp = headSellos;
+    Sellos* temp = headSellos;
     int i = 1;
 
     cout << " ~~~~~~~~~~~~~~~~~~~~~~ Sellos Discográficos ~~~~~~~~~~~~~~~~~~~~~~ " << endl << endl;
-    do{
-        
-        subLArtistas *tempo = temp->subLArtistas;
+    do {
+        subLArtistas* tempo = temp->subLArtistas;
         int j = 1;
 
-        cout << i << "- " << temp->nombre << endl << endl << " ~~~~~~~~ Artistas ~~~~~~~~ " << endl;
-        while(tempo!=nullptr){
-            cout << j << "- " << tempo ->enlace->nombreArtista << endl;
-            tempo = tempo->sig;
-
+        if (tempo == nullptr) {
+            cout << "No hay elementos asociados." << endl;
+        } else {
+            cout << i << "- " << temp->nombre << endl << endl << " ~~~~~~~~ Artistas ~~~~~~~~ " << endl;
+            while (tempo != nullptr) {
+                if (tempo->enlace != nullptr) {
+                    cout << j << "- " << tempo->enlace->nombreArtista << endl;
+                }
+                tempo = tempo->sig;
+                j++;
+            }
         }
 
         cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
         temp = temp->sig;
+        i++;
+    } while (temp != headSellos);
+}
 
-    }while(temp!=headSellos);
+void numeroAlbum(){
+    int canciones;
+
+    cout << "Por favor ingrese la cantidad que deben superar los álbumes." << endl;
+    canciones = validarEntero();
+    AlbumMasCanciones(canciones);
 
 }
 
+void anoCancion(){
+    int ano;
+
+    cout << "Por favor ingrese los años de las canciones que desea buscar." << endl;
+    ano = validarEntero();
+    CancionesPorAno(ano);
+
+}
+
+/*Funciones para el menu y validación de datos*/
+void insertarDatosCanciones(){
+    int idCan, idArti, ano, idAlbu, minu, seg;
+    string titulo;
+
+    cout << "Por favor ingrese el identificador de la canción: " << endl;
+    idCan = validarEntero();
+
+    while(idCan<=0){
+        cout << "Valor invalido, intentelo de nuevo: " << endl;
+        idCan = validarEntero();
+    }
+
+    if(buscarCancion(idCan)!=nullptr){
+        cout << "La canción ya ha sido ingresado." << endl;
+        return;
+    }
+
+    cout << "Por favor ingrese el identificador del álbum al que pertenece la canción: " << endl;
+    idAlbu = validarEntero();
+
+    while(idAlbu<=0){
+        cout << "Valor invalido, intentelo de nuevo: " << endl;
+        idAlbu = validarEntero();
+    }
+
+    if(buscarAlbum(idAlbu)==nullptr){
+        cout << "El álbum no se encuentra ingresado, por favor ingrese primero el álbum: " << endl;
+        return;
+    }
+
+    cout << "Por favor ingrese el identificador del artista al que pertenece la canción: " << endl;
+    idArti = validarEntero();
+
+    while(idArti<=0){
+        cout << "Valor invalido, intentelo de nuevo: " << endl;
+        idArti = validarEntero();
+    }
+
+    if(buscarArtista(idArti)==nullptr){
+        cout << "El artista no se encuentra ingresado, por favor ingrese primero el artista: " << endl;
+        return;
+    }
+
+    cout << "Por favor ingrese el año de la canción: " << endl;
+    ano = validarEntero();
+
+    while(ano<0|| ano>2025){
+        cout << "Valor invalido, intentelo de nuevo: " << endl;
+        ano = validarEntero();
+    }
+
+    cout << "Por favor ingrese los minutos que dura la canción: " << endl;
+    minu = validarEntero();
+
+    while(minu<=0){
+        cout << "Valor invalido, intentelo de nuevo: " << endl;
+        minu = validarEntero();
+    }
+
+    cout << "Por favor ingrese los segundos que dura la canción: " << endl;
+    seg = validarEntero();
+
+    while(seg<0 || seg>60){
+        cout << "Valor invalido, intentelo de nuevo." << endl;
+        seg = validarEntero();
+    }
+
+    cout << "Por favor ingrese el nombre de la canción que desea ingresar: " << endl;
+    getline(cin, titulo);
+    while (!validar(titulo)) {
+        cout << "Título invalido, por favor ingreselo de nuevo: " << endl;
+        getline(cin, titulo);
+    }
+
+    insertarCanciones(idCan,titulo, ano, minu, seg, idAlbu, idArti);
+    insertarCancionEnAlbum(idAlbu, idCan);
+    insertarCancionEnArtista(idArti, idCan);
+
+    cout << "Canción ingresada al sistema con éxito." << endl;
+}
+
+void modificarDatosCanciones(){
+    int idCan;
+    string nuevoTitulo;
+
+    idCan = validarEntero();
+
+    if(buscarCancion(idCan)==nullptr){
+        cout << "El artista no se encuentra ingresado en el sistema." << endl;
+        return;
+    }
+
+    cout << "Por favor ingrese el nuevo nombre de la canción: " << endl;
+    getline(cin, nuevoTitulo);
+    while (!validar(nuevoTitulo)) {
+        cout << "Nombre invalido, por favor ingreselo de nuevo: " << endl;
+        getline(cin, nuevoTitulo);
+    }
+
+    modificarCancion(idCan, nuevoTitulo);
+}
+
+void buscarDatosCanciones(){
+    int idCancion;
+
+    cout << "Por favor ingrese el identificador de la canción que desea buscar." << endl;
+    idCancion = validarEntero();
+    Canciones *temp = buscarCancion(idCancion);
+
+    if(temp==nullptr){
+        cout << "La canción no ha sido ingresada al sistema." << endl;
+        return;
+    }
+
+    cout << "Información de la canción: " << endl << "Nombre: " << temp->titulo << endl << "Identificador: " << endl 
+    << temp->ID << endl << "Duración de la cancion: " << temp->minutos << ":" << (temp->segundos < 10 ? "0" : "") 
+    << temp->segundos << endl << "Año de publicación: " << temp->ano << "Identificador del artista al que pertenece: " 
+    << temp->IDartista << endl << "Identificador del álbum al que pertenece: " << temp->IDalbum;
+    
+}
+
+void eliminarDatosCanciones(){
+    int idCancion;
+
+    cout << "Por favor ingrese el identificador de la canción que desea buscar." << endl;
+    idCancion = validarEntero();
+    if(buscarCancion(idCancion)==nullptr){
+        cout << "La canción no se encuentra ingresada en el sistema." << endl;
+        return;
+    }
+
+    eliminarCancion(idCancion);
+}
+
+void menuMantenimientoCanciones(){
+    int opcion;
+    
+    do{
+        cout << "Por favor ingrese que acción desea realizar en la lista de canciones:" << endl
+        << "1- Insertar datos." << endl << "2- Modificar datos." << endl << "3- Buscar datos." << endl
+        << "4- Eliminar datos." << endl << "5- Volver al menú principal." << endl;
+    
+        opcion = validarEntero();
+
+        switch (opcion)
+        {
+        case 1:
+            insertarDatosCanciones();
+            break;
+        case 2:
+            modificarDatosCanciones();
+            break;
+        case 3:
+            buscarDatosCanciones();
+            break;
+        case 4:
+            eliminarDatosCanciones();
+            break;
+        case 5:
+            cout << "Volviendo al menu principal." << endl;
+            return;
+        default:
+            cout << "Opción invalida, intentelo de nuevo." << endl;
+        }
+
+    } while(true);
+}
+
+void  opcionesInsertartista(){
+
+}
+
+void opcionModificarArtista(){
+
+}
+
+void buscarDatosArtista(){
+
+}
+
+void opcionEliminarArtista(){
+    
+}
+
+void menuMantenimientoArtistas(){
+    int opcion;
+
+    do{
+        cout << "Por favor ingrese que acción desea realizar en la lista de artistas:" << endl
+        << "1- Insertar datos." << endl << "2- Modificar datos." << endl << "3- Buscar datos." << endl
+        << "4- Eliminar datos." << endl << "5- Volver al menú principal." << endl;
+    
+        opcion = validarEntero();
+
+        switch (opcion)
+        {
+        case 1:
+            opcionesInsertartista();
+            break;
+        case 2:
+            opcionModificarArtista();
+            break;
+        case 3:
+            buscarDatosArtista();
+            break;
+        case 4:
+            opcionEliminarArtista();
+            break;
+        case 5:
+            cout << "Volviendo al menú principal." << break;
+        default:
+            break;
+        }
+
+    }while(true);
+
+}
+
+void menuMantenimientoAlbumes(){
+    int opcion;
+    cout << "Por favor ingrese que acción desea realizar en la lista de canciones:" << endl
+    << "1-Insertar datos." << endl << "2- Modificar datos" << endl << "3-Buscar datos." << endl
+    << "4- Eliminar datos." << endl << "5- Volver al menú principal." << endl;
+    
+    opcion = validarEntero();
+
+}
+
+void menuMantenimientoGeneros(){
+    int opcion;
+    cout << "Por favor ingrese que acción desea realizar en la lista de canciones:" << endl
+    << "1-Insertar datos." << endl << "2- Modificar datos" << endl << "3-Buscar datos." << endl
+    << "4- Eliminar datos." << endl << "5- Volver al menú principal." << endl;
+    
+    opcion = validarEntero();
+
+}
+
+void menuMantenimientoPlaylist(){
+    int opcion;
+    cout << "Por favor ingrese que acción desea realizar en la lista de canciones:" << endl
+    << "1-Insertar datos." << endl << "2- Modificar datos" << endl << "3-Buscar datos." << endl
+    << "4- Eliminar datos." << endl << "5- Volver al menú principal." << endl;
+    
+    opcion = validarEntero();
+
+}
+
+void menuMantenimientoSellos(){
+    int opcion;
+    cout << "Por favor ingrese que acción desea realizar en la lista de canciones:" << endl
+    << "1-Insertar datos." << endl << "2- Modificar datos" << endl << "3-Buscar datos." << endl
+    << "4- Eliminar datos." << endl << "5- Volver al menú principal." << endl;
+    
+    opcion = validarEntero();
+
+}
+
+void menuMantenimiento(){
+    int opcion;
+    do{
+        cout << "Por favor ingrese de que lista desea hacer mantenimiento: " << endl
+        << "1- Canciones." << endl << "2- Artistas." << endl << "3- Álbumes." << endl
+        << "4- Géneros musicales." << endl << "5- Playlist." << endl 
+        << "6- Sellos discográficos." << endl << "7- Volver al menu principal" << endl;
+    
+        opcion = validarEntero();
+        switch (opcion)
+        {
+        case 1:
+            menuMantenimientoCanciones();
+            break;
+        case 2: 
+            menuMantenimientoArtistas();
+            break;
+        case 3:
+            menuMantenimientoAlbumes();
+            break;
+        case 4:
+            menuMantenimientoGeneros();
+            break;
+        case 5:
+            menuMantenimientoPlaylist();
+            break;
+        case 6:
+            menuMantenimientoSellos();
+            break;
+        case 7:
+            cout << "Volviendo al menú principal." << endl;
+            return;
+        default:
+            cout << "Opción invalida, intente de nuevo." << endl;
+        }
+    } while(true);
+}
+
+void menuConsultas(){
+    int opcion;
+    do{
+
+        cout << "Por favor ingrese que consulta desea realizar: " << endl
+        << "1- Géneros con más canciones registradas." << endl 
+        << "2- Artista con más álbumes publicados." << endl
+        << "3- Canción más larga en la base de datos" << endl
+        << "4- Playlist con más canciones." << endl
+        << "5- Cuantos álbumes tiene cada artista." << endl
+        << "6- Sello discográfico con mayor cantidad de artistas" << endl
+        << "7- Canciones publicadas en determinado año." << endl
+        << "8- Álbumes que superen cierta cantidad de canciones." << endl
+        << "9- Regresar al menú principal." << endl;
+    
+        opcion = validarEntero();
+
+        switch (opcion)
+        {
+        case 1:
+            GeneroMasCanciones();
+            break;
+        case 2:
+            ArtistaMasAlbum();
+            break;
+        case 3:
+            CancionMasLarga();
+            break;
+        case 4:
+            PlaylistMasCanciones();
+            break;
+        case 5:
+            albumArtista();
+            break;
+        case 6:
+            SelloMasArtistas();
+            break;
+        case 7:
+            anoCancion();
+            break;
+        case 8:
+            numeroAlbum();
+            break;
+        case 9:
+            cout << "Volviendo al menú principal." << endl;
+            return;
+        default:
+            cout << "Opción no valida, intente de nuevo." << endl;
+        }
+
+    } while(true);
+}
+
+void menuReportes(){
+    int opcion;
+    
+    do{
+        cout << "Por favor indique el reporte que desea consultar: " << endl
+        << "1- Imprimir todas las listas principales." << endl
+        << "2- Reportes detallado de los artistas." << endl
+        << "3- Playlist" << endl << "4- Álbumes." << endl
+        << "5- Sellos discográficos." << endl
+        << "6- Volver al menú principal." << endl;
+    
+        opcion = validarEntero(); 
+        
+        switch (opcion)
+        {
+        case 1:
+            imprimirTodo();
+            break;
+        case 2:
+            reportesArtistas();
+            break;
+        case 3:
+            imprimirPlaylist();
+            break;
+        case 4:
+            imprimirAlbumes();
+            break;
+        case 5:
+            imprimirSellos();
+            break;
+        case 6:
+            cout << "Volviendo al menu principal: " << endl;
+            return;
+        default:
+            cout << "Opción no valida, ingrese de nuevo" << endl;
+        }
+
+    } while(true);
+}
+
+void menuPrincipal(){
+    int opcion;
+
+    do{
+
+        cout << "Bienvenido al sistema musical MusiGest, por favor ingrese que desea realizar: " << endl
+        << "1- Mantenimiento." << endl << "2- Consultas" << endl << "3- Reportes." << endl
+        << "4- Salir." << endl;
+    
+        opcion = validarEntero();
+    
+        switch (opcion)
+        {
+        case 1:
+            menuMantenimiento();
+            break;
+        case 2:
+            menuConsultas();
+            break;
+        case 3:
+            menuReportes();
+            break;
+        case 4:
+            cout << "Saliendo del sistema." << endl;
+            break;
+        default:
+            cout << "Opción no valida, intente de nuevo." << endl;
+        }
+    }while(opcion!=4);
+
+
+}
+
+int main(){
+    cargarDatos();
+    menuPrincipal();
+    return 0;
+}
 int main(){
     cargarDatos();
     GeneroMasCanciones();
