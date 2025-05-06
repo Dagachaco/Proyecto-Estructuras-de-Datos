@@ -1,5 +1,4 @@
-/*Modificar las inserción en enlaces para evitar duplicados*/
-
+/*Falta comentar el código*/
 #include <iostream>
 #include <cctype> //Biblioteca para validar entradas de string;
 #include <limits> // Biblioteca para validar entradas de int;
